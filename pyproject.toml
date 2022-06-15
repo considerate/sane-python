@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "sane-python"
 version = "0.1.0"
-description = "Simple encoding of numeric arrays"
+description = "Simple Array of Numbers Encoding in Python"
 authors = ["Viktor Kronvall <viktor.kronvall@gmail.com>"]
 license = "BSD3"
 
 [tool.poetry.scripts]
-cat_array = "sane_python.io:cat_array"
+sane_identity = "sane_python.io:array_identity"
 
 [tool.poetry.dependencies]
 python = "^3.9"

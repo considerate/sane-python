@@ -48,8 +48,8 @@ def load(path: Path) -> numpy.ndarray:
             raise OSError(f"Expected {payloadlen} bytes, but only got {bytesread}.")
         return array
 
-def cat_array() -> None:
-    parser = argparse.ArgumentParser(description='Output a SANE-encoded array to stdout')
+def array_identity() -> None:
+    parser = argparse.ArgumentParser(description='Load a SANE-encoded array and save it without updating the data.')
     parser.add_argument("path", type=Path)
     parser.add_argument("--output")
     args = parser.parse_args()
