@@ -23,10 +23,16 @@
           })
         ];
       };
-    in
-    {
-      devShells = {
-        default = pkgs.sane-python.env;
+      flake = {
+        devShells = {
+          default = pkgs.sane-python.env.overrideAttrs (old: {
+            nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+              pkgs.sane-python.python.pkgs.poetry
+            ];
+          });
+        };
+        devShell = flake.devShells.default;
       };
-    });
+    in
+    flake);
 }
