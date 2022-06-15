@@ -38,14 +38,14 @@ def load(path: Path) -> numpy.ndarray:
         dtype_byte = int.from_bytes(f.read(1),byteorder='little',signed=False)
         dtype = dtypes.get(dtype_byte)
         if dtype is None:
-            raise ValueError(f'Got unsupported SANE data type {dtype_byte}')
+            raise ValueError(f'Got unsupported SANE data type {dtype_byte}.')
         dtype.newbyteorder('<')
         payloadlen = read_uint64(f)
         # allocate memory for the array
         array = numpy.empty(shape=shape, dtype=dtype)
         bytesread = f.readinto(array.data)
         if bytesread != payloadlen:
-            raise OSError(f"Expected {payloadlen} bytes but only got {bytesread}.")
+            raise OSError(f"Expected {payloadlen} bytes, but only got {bytesread}.")
         return array
 
 def cat_array() -> None:
@@ -67,7 +67,7 @@ def save_buffer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
         write_uint64(f, dim)
     dtype_byte = dtype_bytes.get((array.dtype.kind, array.dtype.itemsize))
     if dtype_byte is None:
-        raise ValueError(f"cannot save {array.dtype.type} data as a SANE array")
+        raise ValueError(f"Cannot save {array.dtype.type} data as a SANE array.")
     f.write(int.to_bytes(dtype_byte, length=1, byteorder='little', signed=False))
     little = array.newbyteorder('<')
     write_uint64(f, little.data.nbytes)
