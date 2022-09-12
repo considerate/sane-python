@@ -63,7 +63,7 @@ def array_identity() -> None:
 def save_buffer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
     f.write(b'SANE')
     write_uint32(f, len(array.shape))
-    for dim in array.shape:
+    for dim in reversed(array.shape):
         write_uint64(f, dim)
     dtype_byte = dtype_bytes.get((array.dtype.kind, array.dtype.itemsize))
     if dtype_byte is None:

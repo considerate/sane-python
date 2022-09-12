@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sane-python"
-version = "0.1.1"
+version = "0.1.2"
 description = "Simple Array of Numbers Encoding in Python"
 authors = ["Viktor Kronvall <viktor.kronvall@gmail.com>"]
 license = "BSD3"
