@@ -4,7 +4,6 @@ import io
 import sys
 import typing
 import argparse
-from typing import Union,Literal
 
 def read_uint32(f: io.BufferedReader) -> int:
     return int.from_bytes(f.read(4), byteorder='little', signed=False)
@@ -29,24 +28,27 @@ dtypes = {
 
 dtype_bytes = { (v.kind, v.itemsize): k for k,v in dtypes.items() }
 
+def load_reader(f: io.BufferedReader) -> numpy.ndarray:
+    magic = f.read(4)
+    assert magic == b'SANE'
+    shapelen = read_uint32(f)
+    shape = list(reversed([read_uint64(f) for _ in range(shapelen)]))
+    dtype_byte = int.from_bytes(f.read(1),byteorder='little',signed=False)
+    dtype = dtypes.get(dtype_byte)
+    if dtype is None:
+        raise ValueError(f'Got unsupported SANE data type {dtype_byte}.')
+    dtype.newbyteorder('<')
+    payloadlen = read_uint64(f)
+    # allocate memory for the array
+    array = numpy.empty(shape=shape, dtype=dtype)
+    bytesread = f.readinto(array.data)
+    if bytesread != payloadlen:
+        raise OSError(f"Expected {payloadlen} bytes, but only got {bytesread}.")
+    return array
+
 def load(path: Path) -> numpy.ndarray:
     with open(path,'rb') as f:
-        magic = f.read(4)
-        assert magic == b'SANE'
-        shapelen = read_uint32(f)
-        shape = list(reversed([read_uint64(f) for _ in range(shapelen)]))
-        dtype_byte = int.from_bytes(f.read(1),byteorder='little',signed=False)
-        dtype = dtypes.get(dtype_byte)
-        if dtype is None:
-            raise ValueError(f'Got unsupported SANE data type {dtype_byte}.')
-        dtype.newbyteorder('<')
-        payloadlen = read_uint64(f)
-        # allocate memory for the array
-        array = numpy.empty(shape=shape, dtype=dtype)
-        bytesread = f.readinto(array.data)
-        if bytesread != payloadlen:
-            raise OSError(f"Expected {payloadlen} bytes, but only got {bytesread}.")
-        return array
+        return load_reader(f)
 
 def array_identity() -> None:
     parser = argparse.ArgumentParser(description='Load a SANE-encoded array and save it without updating the data.')
@@ -56,11 +58,11 @@ def array_identity() -> None:
     array = load(args.path)
     if args.output == '-':
         writer = typing.cast(io.BufferedWriter, sys.stdout.buffer)
-        save_buffer(writer, array)
+        save_writer(writer, array)
     else:
         save(args.output, array)
 
-def save_buffer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
+def save_writer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
     f.write(b'SANE')
     write_uint32(f, len(array.shape))
     for dim in reversed(array.shape):
@@ -75,4 +77,4 @@ def save_buffer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
 
 def save(path: Path, array: numpy.ndarray) -> None:
     with open(path, 'wb') as f:
-        save_buffer(f, array)
+        save_writer(f, array)
