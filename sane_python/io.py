@@ -1,43 +1,48 @@
 import numpy
 from pathlib import Path
 import io
-import sys
 import typing
-import argparse
+
 
 def read_uint32(f: io.BufferedReader) -> int:
-    return int.from_bytes(f.read(4), byteorder='little', signed=False)
+    return int.from_bytes(f.read(4), byteorder="little", signed=False)
+
 
 def write_uint32(f: io.BufferedWriter, n: int) -> int:
-    return f.write(int.to_bytes(n, length=4, byteorder='little', signed=False))
+    return f.write(int.to_bytes(n, length=4, byteorder="little", signed=False))
+
 
 def read_uint64(f: io.BufferedReader) -> int:
-    return int.from_bytes(f.read(8), byteorder='little', signed=False)
+    return int.from_bytes(f.read(8), byteorder="little", signed=False)
+
 
 def write_uint64(f: io.BufferedWriter, n: int) -> int:
-    return f.write(int.to_bytes(n, length=8, byteorder='little', signed=False))
+    return f.write(int.to_bytes(n, length=8, byteorder="little", signed=False))
+
 
 dtypes = {
-    0: numpy.dtype('float32'),
-    1: numpy.dtype('int32'),
-    2: numpy.dtype('uint32'),
-    3: numpy.dtype('float64'),
-    4: numpy.dtype('int64'),
-    5: numpy.dtype('uint64'),
+    0: numpy.dtype("float32"),
+    1: numpy.dtype("int32"),
+    2: numpy.dtype("uint32"),
+    3: numpy.dtype("float64"),
+    4: numpy.dtype("int64"),
+    5: numpy.dtype("uint64"),
 }
 
-dtype_bytes = { (v.kind, v.itemsize): k for k,v in dtypes.items() }
+dtype_bytes = {(v.kind, v.itemsize): k for k, v in dtypes.items()}
 
-def load_reader(f: io.BufferedReader) -> numpy.ndarray:
+
+def load_reader(f: io.BufferedReader) -> typing.Optional[numpy.ndarray]:
     magic = f.read(4)
-    assert magic == b'SANE'
+    if magic != b"SANE":
+        return None
     shapelen = read_uint32(f)
     shape = list(reversed([read_uint64(f) for _ in range(shapelen)]))
-    dtype_byte = int.from_bytes(f.read(1),byteorder='little',signed=False)
+    dtype_byte = int.from_bytes(f.read(1), byteorder="little", signed=False)
     dtype = dtypes.get(dtype_byte)
     if dtype is None:
-        raise ValueError(f'Got unsupported SANE data type {dtype_byte}.')
-    dtype.newbyteorder('<')
+        raise ValueError(f"Got unsupported SANE data type {dtype_byte}.")
+    dtype.newbyteorder("<")
     payloadlen = read_uint64(f)
     # allocate memory for the array
     array = numpy.empty(shape=shape, dtype=dtype)
@@ -46,35 +51,28 @@ def load_reader(f: io.BufferedReader) -> numpy.ndarray:
         raise OSError(f"Expected {payloadlen} bytes, but only got {bytesread}.")
     return array
 
-def load(path: Path) -> numpy.ndarray:
-    with open(path,'rb') as f:
-        return load_reader(f)
 
-def array_identity() -> None:
-    parser = argparse.ArgumentParser(description='Load a SANE-encoded array and save it without updating the data.')
-    parser.add_argument("path", type=Path)
-    parser.add_argument("--output")
-    args = parser.parse_args()
-    array = load(args.path)
-    if args.output == '-':
-        writer = typing.cast(io.BufferedWriter, sys.stdout.buffer)
-        save_writer(writer, array)
-    else:
-        save(args.output, array)
+def load(path: Path) -> numpy.ndarray:
+    with open(path, "rb") as f:
+        array = load_reader(f)
+        assert array is not None
+        return array
+
 
 def save_writer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
-    f.write(b'SANE')
+    f.write(b"SANE")
     write_uint32(f, len(array.shape))
     for dim in reversed(array.shape):
         write_uint64(f, dim)
     dtype_byte = dtype_bytes.get((array.dtype.kind, array.dtype.itemsize))
     if dtype_byte is None:
         raise ValueError(f"Cannot save {array.dtype.type} data as a SANE array.")
-    f.write(int.to_bytes(dtype_byte, length=1, byteorder='little', signed=False))
-    little = array.newbyteorder('<')
+    f.write(int.to_bytes(dtype_byte, length=1, byteorder="little", signed=False))
+    little = array.newbyteorder("<")
     write_uint64(f, little.data.nbytes)
     f.write(little.data)
 
+
 def save(path: Path, array: numpy.ndarray) -> None:
-    with open(path, 'wb') as f:
+    with open(path, "wb") as f:
         save_writer(f, array)
