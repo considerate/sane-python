@@ -3,7 +3,6 @@ from pathlib import Path
 import io
 import typing
 
-
 def read_uint32(f: io.BufferedReader) -> int:
     return int.from_bytes(f.read(4), byteorder="little", signed=False)
 
@@ -27,6 +26,8 @@ dtypes = {
     3: numpy.dtype("float64"),
     4: numpy.dtype("int64"),
     5: numpy.dtype("uint64"),
+    6: numpy.dtype("int8"),
+    7: numpy.dtype("uint8"),
 }
 
 dtype_bytes = {(v.kind, v.itemsize): k for k, v in dtypes.items()}
