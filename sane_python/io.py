@@ -3,6 +3,7 @@ from pathlib import Path
 import io
 import typing
 
+
 def read_uint32(f: io.BufferedReader) -> int:
     return int.from_bytes(f.read(4), byteorder="little", signed=False)
 
@@ -53,6 +54,15 @@ def load_reader(f: io.BufferedReader) -> typing.Optional[numpy.ndarray]:
     return array
 
 
+def load_arrays(f: io.BufferedReader) -> typing.Generator[numpy.ndarray, None, None]:
+    while True:
+        arr = load_reader(f)
+        if arr is None:
+            return
+        else:
+            yield arr
+
+
 def load(path: Path) -> numpy.ndarray:
     with open(path, "rb") as f:
         array = load_reader(f)
@@ -72,6 +82,11 @@ def save_writer(f: io.BufferedWriter, array: numpy.ndarray) -> None:
     little = array.newbyteorder("<")
     write_uint64(f, little.data.nbytes)
     f.write(little.data)
+
+
+def save_arrays(f: io.BufferedWriter, arrays: typing.Iterable[numpy.ndarray]) -> None:
+    for arr in arrays:
+        save_writer(f, arr)
 
 
 def save(path: Path, array: numpy.ndarray) -> None:

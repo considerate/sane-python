@@ -28,6 +28,9 @@
           default = pkgs.sane-python.env.overrideAttrs (old: {
             nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
               pkgs.sane-python.python.pkgs.poetry
+              pkgs.sane-python.python.pkgs.black
+              pkgs.sane-python.python.pkgs.flake8
+              pkgs.python-language-server
             ];
           });
         };
