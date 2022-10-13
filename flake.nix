@@ -35,6 +35,7 @@
         packages = {
           default = pkgs.sane-python;
         };
+        legacyPackages = pkgs;
         devShells = {
           default = pkgs.sane-python.overrideAttrs (old: {
             nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
